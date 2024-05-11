@@ -1,0 +1,15 @@
+{
+  "name": "First Extensions",
+  "description": "Basic Chrome Extension",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "My first extension"
+  },
+  "icons": {
+    "16": "react.png",
+    "48": "react.png",
+    "128": "react.png"
+  }
+}
