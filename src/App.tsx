@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import "./App.css";
-import pdfToText from "react-pdftotext";
 import OpenAI from "openai";
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.js",
+  import.meta.url
+).toString();
 
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_KEY,
   dangerouslyAllowBrowser: true,
 });
 
+const isChromeExtension =
+  typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
+
+// @ts-ignore: Unreachable code error
 const jobDescription = `
 About the job
 Are you an experienced software developer looking to make a big impact? Come work with us at Teamspective, a fast growing startup with a fresh approach to people analytics and engagement.
@@ -62,118 +70,36 @@ Next steps
 Please send us your CV via the 'Apply' button. We might invite candidates for interviews already during the application period and fill the position as soon as we find the right person, so the sooner you apply the better.`;
 
 function App() {
-  const [file, setFile] = useState<File | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeData, setResumeData] = useState<{
+    text: string;
+    fileName: string;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
+  const [score, setScore] = useState<number | null>(null);
+
+  console.log({ resumeFile, resumeData, error, comparing, score });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
+    const files = e.target.files;
+    if (!files) {
+      return;
     }
+
+    setResumeFile(files[0]);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setComparing(true);
-    if (file) {
-      pdfToText(file)
-        .then((resumeText: string) => {
-          // console.log(text);
-          // return callOpenAIAPI(text);
-          // return askQuestion(text);
-          return compareTexts(jobDescription, resumeText);
-        })
-        .catch((error: Error) =>
-          console.error("Failed to extract text from pdf: ", error)
-        );
+
+    if (!resumeData) {
+      setError("No text found in the resume");
+      return;
     }
+    // compareTexts(resumeData.text, jobDescription);
+    setScore(7.6);
   };
-
-  // const callOpenAIAPI = async (pdfText: string) => {
-  //   try {
-  //     const response = await fetch(
-  //       "https://api.openai.com/v1/chat/completions",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${import.meta.env.VITE_OPENAI_KEY}`,
-  //         },
-  //         body: JSON.stringify({
-  //           model: "gpt-4-turbo",
-  //           prompt: `Given the job description: ${jobPost}. And a resume: ${pdfText}. On a scale of 1 to 10, how well does the resume match the job description?`,
-  //           max_tokens: 1024,
-  //           temperature: 0.7, // Adjust based on how deterministic you want the output to be
-  //         }),
-  //       }
-  //     );
-  //     const data = await response.json();
-  //     return console.log(data);
-  //   } catch (error) {
-  //     return console.error("Error:", error);
-  //   }
-  // };
-
-  // async function askQuestion(resumeText: string) {
-  //   try {
-  //     const prompt = `Compare the following job description and resume, and rate their similarity on a scale from 1 to 10.\n\nJob Description: "${jobDescription}"\n\nResume: "${resumeText}". How would you rate the resume's match to the job description between 1 and 10?`;
-  //     const response = await openai.chat.completions.create({
-  //       model: "gpt-4-turbo",
-  //       messages: [{ role: "user", content: prompt }],
-  //       max_tokens: 100,
-  //       temperature: 0.3,
-  //     });
-
-  //     // const output = response.data.choices[0].text.trim();
-  //     const output = response;
-  //     console.log(`Model Response: ${output.choices[0].message.content}`);
-
-  //     // Assuming the model directly returns a numerical score or a sentence from which a score can be interpreted.
-  //     // Further processing may be required to extract the numerical value reliably.
-  //   } catch (error) {
-  //     console.error("Error querying OpenAI:", error);
-  //   }
-  // }
-
-  // async function askQuestion(pdfText: string) {
-  //   try {
-  //     console.log(
-  //       `Given the job description: ${jobDescription}. And a resume: ${pdfText}. On a scale of 1 to 10, how well does the resume match the job description?`
-  //     );
-  //     // const completion = await openai.chat.completions.create({
-  //     //   messages: [
-  //     //     { role: "system", content: "You are a helpful assistant." },
-  //     //     {
-  //     //       role: "user",
-  //     //       content:
-  //     //         "Here is the job description and the resume text. Please evaluate the match.",
-  //     //     },
-  //     //     {
-  //     //       role: "system",
-  //     //       content:
-  //     //         "Sure, please provide the job description and the resume text.",
-  //     //     },
-  //     //     {
-  //     //       role: "user",
-  //     //       content: `Given the job description: ${jobPost}. And a resume: ${pdfText}. On a scale of 1 to 10, how well does the resume match the job description?`,
-  //     //     },
-  //     //     {
-  //     //       role: "assistant",
-  //     //       content: "I'm processing the information to evaluate the match.",
-  //     //     },
-  //     //     {
-  //     //       role: "assistant",
-  //     //       content:
-  //     //         "Based on the analysis, the resume scores a [X] out of 10 in matching the job description.",
-  //     //     },
-  //     //   ],
-  //     //   model: "gpt-3.5-turbo",
-  //     // });
-
-  //     // console.log("AI Response:", completion.choices[0]);
-  //   } catch (error) {
-  //     console.error("Error during API call:", error);
-  //   }
-  // }
 
   async function generateEmbeddings(text: string) {
     try {
@@ -183,6 +109,7 @@ function App() {
       });
       return response.data[0].embedding;
     } catch (error) {
+      setError("Error generating embeddings: " + error);
       console.error("Error generating embeddings:", error);
       return null;
     }
@@ -207,7 +134,7 @@ function App() {
     // Transform from [-1, 1] to [1, 10]
     return 5.5 + 4.5 * score;
   }
-
+  // @ts-ignore: Unreachable code error
   async function compareTexts(text1: string, text2: string) {
     const embedding1 = await generateEmbeddings(text1);
     const embedding2 = await generateEmbeddings(text2);
@@ -216,36 +143,180 @@ function App() {
       const similarity = await cosineSimilarity(embedding1, embedding2);
       const transformedScore = transformScore(similarity);
       console.log(`Similarity Score (1-10): ${transformedScore.toFixed(2)}`);
+      setScore(parseFloat(transformedScore.toFixed(2)));
       setComparing(false);
     } else {
+      setError("Failed to generate embeddings for texts.");
       console.log("Failed to generate embeddings for texts.");
       setComparing(false);
     }
   }
 
+  useEffect(() => {
+    if (isChromeExtension) {
+      chrome.storage?.local.get(["resume"], async (result) => {
+        const resumeDataFromStorage = result.resume;
+        if (resumeDataFromStorage) {
+          setResumeData(resumeDataFromStorage);
+        }
+      });
+    } else {
+      const resumeDataFromStorage = localStorage.getItem("resume");
+      if (resumeDataFromStorage) {
+        setResumeData(JSON.parse(resumeDataFromStorage));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!resumeFile) {
+      return;
+    }
+
+    if (resumeFile.type !== "application/pdf") {
+      setError("File should be a pdf");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(resumeFile); // Read the file as data URL
+
+    reader.onload = async () => {
+      const url = reader.result as string;
+      try {
+        const pdf = await pdfjs.getDocument({ url }).promise;
+        const numPages = pdf.numPages;
+        let text = "";
+
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item) => "str" in item && item.str)
+            .join(" ");
+          text += pageText + " ";
+        }
+
+        const resumeData = {
+          text,
+          fileName: resumeFile.name,
+        };
+
+        setResumeData(resumeData);
+
+        if (isChromeExtension) {
+          chrome.storage.local.set({
+            resume: resumeData,
+          });
+        } else {
+          localStorage.setItem("resume", JSON.stringify(resumeData));
+        }
+      } catch (error) {
+        setError("Error processing PDF: " + error);
+        console.error("Error processing PDF: ", error);
+      }
+    };
+  }, [resumeFile]);
+
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="resume">Upload your CV (PDF or DOCX):</label>
-        <div className="m-4">
-          <input
-            type="file"
-            id="resume"
-            name="resume"
-            accept=".pdf,.docx"
-            onChange={handleFileChange}
-          />
-          {file && (
-            <button
-              disabled={comparing}
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    <div className="bg-gray-900">
+      <div className="w-80 p-4">
+        {!score && (
+          <form onSubmit={handleSubmit}>
+            <label
+              className="block mb-2 font-bold text-gray-900 dark:text-white"
+              htmlFor="file_input"
             >
-              {comparing ? "Submitting..." : "Submit"}
-            </button>
-          )}
-        </div>
-      </form>
+              Upload your CV (PDF):
+            </label>
+            <div className="">
+              {!resumeData?.text ? (
+                <label
+                  htmlFor="resume"
+                  className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg
+                      className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 20 16"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                      />
+                    </svg>
+                    <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="font-semibold">Click to upload</span>
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      PDF
+                    </p>
+                  </div>
+                  <input
+                    className="hidden"
+                    type="file"
+                    id="resume"
+                    name="resume"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              ) : (
+                <div className="text-white italic">{resumeData?.fileName}</div>
+              )}
+            </div>
+
+            <div className="mt-4">
+              {resumeData?.text && (
+                <button
+                  disabled={comparing}
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                >
+                  <img src="/rate.png" width={20} />
+                  {comparing
+                    ? "Rating your CV..."
+                    : "Rate my CV for this job post"}
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+
+        {score && (
+          <div>
+            <div className="text-white mt-4">
+              Similarity Score (1-10):{" "}
+              <span className="font-bold">{score}</span>
+            </div>
+            <div className="text-white mt-4">
+              <button
+                disabled={comparing}
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                <img src="/rate.png" />
+                Rate
+              </button>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
+            <span className="">{error}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
