@@ -5,22 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build",
+    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content.ts src/background.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
-    "openai": "^4.45.0",
+    "openai": "^4.46.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-pdf": "^8.0.2"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
-    "@types/react": "^18.3.1",
+    "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^7.8.0",
-    "@typescript-eslint/parser": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/parser": "^7.9.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
