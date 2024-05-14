@@ -1,12 +1,14 @@
 # chrome-extension-linkedin-job-rating
 
-chrome extension linkedin job rating
+Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match.
 
-# React + Vite
+# Build extension
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Simply run
 
-Currently, two official plugins are available:
+```sh
+npm i
+npm run build
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Watch this video for the rest: https://youtu.be/4ykBFAjjXe4
