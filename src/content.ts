@@ -20,7 +20,8 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
       resultElement.style.marginBottom = "20px";
       resultElement.style.padding = "10px";
       resultElement.style.borderBottom = "2px solid #fff";
-      resultElement.style.backgroundColor = "#0067ff";
+      resultElement.style.backgroundColor = "#1c4974";
+      resultElement.style.color = "#fff";
       targetElement.insertBefore(resultElement, targetElement.firstChild);
     }
   }

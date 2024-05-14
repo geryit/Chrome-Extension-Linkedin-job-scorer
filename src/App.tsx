@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import OpenAI from "openai";
 import { pdfjs } from "react-pdf";
 import testJobDescription from "./testJobDescription";
@@ -39,8 +39,63 @@ function App() {
     setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const scoreTexts = useCallback(
+    async (jobDescription: string, cvText: string) => {
+      try {
+        // return "Score(1-10): <span>8</span><br>Summary: The CV is a good match for the job description.";
+
+        const openai = new OpenAI({
+          apiKey: openAiKey,
+          dangerouslyAllowBrowser: true,
+        });
+
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: `
+Compare the following job description and CV text and evaluate their relevance and similarity.
+
+Return Score between 1 to 10.
+1 for no similarity and 10 for perfect similarity.
+
+And two sentence summary of comparison with differences.
+Summary should check language skills. 
+
+Dont return in MD format but in HTML format.
+
+Return the score and summary as html (not in MD format):
+<div>Score(1-10): <span>{score}</span></div>
+----------------
+<div>Summary: {Summary}</div>
+
+Job Description:
+${jobDescription}
+
+CV Text:
+${cvText}
+
+`,
+            },
+          ],
+          max_tokens: 500,
+          // temperature: 0.7,
+        });
+
+        const resp = response.choices[0].message.content?.trim();
+
+        return resp;
+      } catch (error) {
+        setError("Error generating completions: " + error);
+        console.error("Error generating completions:", error);
+        return null;
+      }
+    },
+    [openAiKey]
+  );
+
+  const scoreIt = useCallback(async () => {
     if (!resumeData) {
       setError("No text found in the resume. Can you try uploading it again?");
       return;
@@ -67,6 +122,7 @@ function App() {
             setError(
               "No job description found. Are you sure you are on a job post in Linkedin?"
             );
+            setComparing(false);
             return;
           }
           scoreTexts(response.content, resumeData.text).then((res) => {
@@ -81,57 +137,7 @@ function App() {
         }
       );
     });
-  };
-
-  const scoreTexts = async (jobDescription: string, cvText: string) => {
-    try {
-      return "Score(1-10): <span>8</span><br>Summary: The CV is a good match for the job description.";
-
-      const openai = new OpenAI({
-        apiKey: openAiKey,
-        dangerouslyAllowBrowser: true,
-      });
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "user",
-            content: `
-            Compare the following job description and CV text and evaluate their relevance and similarity.
-
-            Return Score between 1 to 10.
-            1 for no similarity and 10 for perfect similarity.
-
-            And a one sentence summary of comparison with differences.
-
-            Return the score and summary as html (not in MD format):
-            <div>Score(1-10): <span>{score}</span></div>
-            ----------------
-            <div>Summary: {Summary}</div>
-      
-            Job Description:
-            ${jobDescription}
-      
-            CV Text:
-            ${cvText}
-            
-            `,
-          },
-        ],
-        max_tokens: 500,
-        // temperature: 0.7,
-      });
-
-      const resp = response.choices[0].message.content?.trim();
-
-      return resp;
-    } catch (error) {
-      setError("Error generating completions " + error);
-      console.error("Error generating completions:", error);
-      return null;
-    }
-  };
+  }, [resumeData, scoreTexts]);
 
   useEffect(() => {
     if (isChromeExtension) {
@@ -232,15 +238,25 @@ function App() {
     setIsSettingsOpen((prev) => !prev);
   };
 
+  // run on popup open
+  useEffect(() => {
+    if (openAiKey && resumeData) {
+      scoreIt();
+    }
+  }, [openAiKey, resumeData, scoreIt]);
+
   return (
     <div className="bg-gray-900 text-white relative">
       {openAiKey && (
-        <button className="absolute right-0 m-2" onClick={toggleSettingsView}>
-          <img src="/settings.svg" width={18} />
+        <button
+          className="absolute right-0 m-2 hover:brightness-50"
+          onClick={toggleSettingsView}
+        >
+          <img src="/settings.svg" width={18} alt="Settings" title="Settings" />
         </button>
       )}
 
-      <div className="w-80 p-4">
+      <div className="w-96 p-4">
         {isSettingsOpen || !openAiKey ? (
           <form onSubmit={saveSettings}>
             <div>
@@ -318,27 +334,26 @@ function App() {
           </form>
         ) : (
           <div>
-            <form onSubmit={handleSubmit}>
-              {resumeData?.text && (
-                <div className="">
-                  <button
-                    disabled={comparing}
-                    type="submit"
-                    className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
-                  >
-                    <img src="/rate.png" width={24} />
-                    {comparing
-                      ? "Rating your CV..."
-                      : "Rate my CV for this job post"}
-                  </button>
-                </div>
-              )}
-            </form>
             {content && (
               <div
-                className="text-white mt-4"
+                className="text-white mb-4"
                 dangerouslySetInnerHTML={{ __html: content }}
               />
+            )}
+            {resumeData?.text && !error && (
+              <div className="">
+                <button
+                  onClick={scoreIt}
+                  disabled={comparing}
+                  type="submit"
+                  className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 text-sm"
+                >
+                  <img src="/logo-48p.png" width={24} />
+                  {comparing
+                    ? "Rating your CV..."
+                    : "Rate my CV for this job post (again)"}
+                </button>
+              </div>
             )}
           </div>
         )}
