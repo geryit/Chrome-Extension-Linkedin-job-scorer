@@ -13,7 +13,7 @@
   "permissions": ["storage", "scripting", "activeTab"],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["*://*.linkedin.com/jobs/*?currentJobId=*"],
       "js": ["content.js"]
     }
   ],
