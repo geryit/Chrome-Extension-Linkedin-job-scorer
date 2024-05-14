@@ -8,7 +8,7 @@
     "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content.ts src/background.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "zip": "zip -r ~/Downloads/linkedin-cv-scorer.zip dist/"
+    "zip": "cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"
   },
   "dependencies": {
     "openai": "^4.47.1",
