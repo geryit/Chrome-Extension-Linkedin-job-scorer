@@ -7,15 +7,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_KEY,
-  dangerouslyAllowBrowser: true,
-});
-
 const isChromeExtension =
   typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
 
 function App() {
+  const [openAiKey, setOpenAiKey] = useState("");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<{
     text: string;
@@ -55,17 +52,21 @@ function App() {
         activeTab as number,
         { action: "getDivContent" },
         (response) => {
-          console.log(response.content);
+          console.log(response);
 
           if (!resumeData) {
-            setError("No text found in the resume");
+            setError(
+              "No text found in the resume. Can you try uploading it again?"
+            );
             return;
           }
-          if (!response.content) {
-            setError("No job description found");
+          if (!response || !response.content) {
+            setError(
+              "No job description found. Are you sure you are on a job post in Linkedin?"
+            );
             return;
           }
-          compareTexts(resumeData.text, response.content).then(()=>
+          compareTexts(resumeData.text, response.content).then(() =>
             setComparing(false)
           );
           // setScore(7.6);
@@ -76,6 +77,10 @@ function App() {
 
   const generateEmbeddings = async (text: string) => {
     try {
+      const openai = new OpenAI({
+        apiKey: openAiKey,
+        dangerouslyAllowBrowser: true,
+      });
       const response = await openai.embeddings.create({
         model: "text-embedding-3-small", // Confirm the latest model from OpenAI's documentation
         input: text,
@@ -118,21 +123,31 @@ function App() {
       console.log("Failed to generate embeddings for texts.");
     }
     return setComparing(false);
-
   };
 
   useEffect(() => {
     if (isChromeExtension) {
-      chrome.storage?.local.get(["resume"], async (result) => {
+      chrome.storage?.local.get(["resume"], (result) => {
         const resumeDataFromStorage = result.resume;
         if (resumeDataFromStorage) {
           setResumeData(resumeDataFromStorage);
+        }
+      });
+      chrome.storage?.local.get(["openAiKey"], (result) => {
+        const openAIApiKeyFromStorage = result.openAiKey;
+        if (openAIApiKeyFromStorage) {
+          setOpenAiKey(openAIApiKeyFromStorage);
         }
       });
     } else {
       const resumeDataFromStorage = localStorage.getItem("resume");
       if (resumeDataFromStorage) {
         setResumeData(JSON.parse(resumeDataFromStorage));
+      }
+
+      const openAIApiKeyFromStorage = localStorage.getItem("openAiKey");
+      if (openAIApiKeyFromStorage) {
+        setOpenAiKey(openAIApiKeyFromStorage);
       }
     }
   }, []);
@@ -187,10 +202,51 @@ function App() {
     };
   }, [resumeFile]);
 
+  const saveOpenAIKey = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.target as HTMLFormElement);
+    const apiKey = data.get("apiKey") as string;
+    if (!apiKey) {
+      setError("Please enter an API key");
+      return;
+    }
+    setOpenAiKey(apiKey);
+    if (isChromeExtension) {
+      chrome.storage.local.set({ openAiKey: apiKey });
+    } else {
+      localStorage.setItem("openAiKey", apiKey);
+    }
+  };
+
+  const openSettings = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
   return (
-    <div className="bg-gray-900">
+    <div className="bg-gray-900 text-white relative">
+      <button className="absolute right-0 m-2" onClick={openSettings}>
+        <img src="/settings.svg" width={18} />
+      </button>
+
       <div className="w-80 p-4">
-        {
+        {!openAiKey ||
+          (isSettingsOpen && (
+            <form onSubmit={saveOpenAIKey}>
+              <label htmlFor="apiKey">Save OpenAI API Key:</label>
+              <input
+                type="password"
+                name="apiKey"
+                placeholder="OpenAI API Key"
+                className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
+                required
+                autoComplete="openai-key"
+              />
+              <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center gap-2 mt-2">
+                Save OpenAI Key
+              </button>
+            </form>
+          ))}
+        {openAiKey && (
           <form onSubmit={handleSubmit}>
             {!resumeData?.text && (
               <label
@@ -269,7 +325,7 @@ function App() {
               </div>
             )}
           </form>
-        }
+        )}
 
         {score && (
           <div>
@@ -281,7 +337,7 @@ function App() {
 
         {error && (
           <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4"
             role="alert"
           >
             <span className="">{error}</span>
