@@ -1,4 +1,4 @@
-# chrome-extension-linkedin-job-rating
+# Chrome Extension: Linkedin job scorer
 
 Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match.
 
