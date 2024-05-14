@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import OpenAI from "openai";
 import { pdfjs } from "react-pdf";
+import testJobDescription from "./testJobDescription";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.js",
@@ -20,9 +21,7 @@ function App() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
-  const [score, setScore] = useState<number | null>(null);
-
-  console.log({ resumeFile, resumeData, error, comparing, score });
+  const [content, setContent] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -34,17 +33,29 @@ function App() {
   };
 
   const newCv = () => {
-    setResumeData(null);
-    setScore(null);
     setResumeFile(null);
+    setResumeData(null);
+    setContent(null);
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!resumeData) {
+      setError("No text found in the resume. Can you try uploading it again?");
+      return;
+    }
 
-    setScore(null);
+    setContent(null);
     setComparing(true);
+
+    if (!isChromeExtension) {
+      scoreTexts(testJobDescription, resumeData.text).then((res) => {
+        setContent(res || "");
+        setComparing(false);
+      });
+      return;
+    }
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0].id;
@@ -52,77 +63,121 @@ function App() {
         activeTab as number,
         { action: "getDivContent" },
         (response) => {
-          console.log(response);
-
-          if (!resumeData) {
-            setError(
-              "No text found in the resume. Can you try uploading it again?"
-            );
-            return;
-          }
           if (!response || !response.content) {
             setError(
               "No job description found. Are you sure you are on a job post in Linkedin?"
             );
             return;
           }
-          compareTexts(resumeData.text, response.content).then(() =>
-            setComparing(false)
-          );
-          // setScore(7.6);
+          // compareTexts(resumeData.text, response.content).then(() =>
+          //   setComparing(false)
+          // );
+
+          scoreTexts(testJobDescription, resumeData.text).then((res) => {
+            setContent(res || "");
+            setComparing(false);
+          });
         }
       );
     });
   };
 
-  const generateEmbeddings = async (text: string) => {
+  // const generateEmbeddings = async (text: string) => {
+  //   try {
+  //     const openAi = new OpenAI({
+  //       apiKey: openAiKey,
+  //       dangerouslyAllowBrowser: true,
+  //     });
+
+  //     const response = await openAi.embeddings.create({
+  //       model: "text-embedding-3-small", // Confirm the latest model from OpenAI's documentation
+  //       input: text,
+  //     });
+  //     return response.data[0].embedding;
+  //   } catch (error) {
+  //     setError("Error generating embeddings: " + error);
+  //     console.error("Error generating embeddings:", error);
+  //     return null;
+  //   }
+  // };
+
+  // const cosineSimilarity = (vecA: number[], vecB: number[]) => {
+  //   let dotProduct = 0.0,
+  //     normA = 0.0,
+  //     normB = 0.0;
+  //   for (let i = 0; i < vecA.length; i++) {
+  //     dotProduct += vecA[i] * vecB[i];
+  //     normA += vecA[i] ** 2;
+  //     normB += vecB[i] ** 2;
+  //   }
+  //   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  // };
+
+  // const transformScore = (score: number) => {
+  //   // Transform from [-1, 1] to [1, 10]
+  //   return 5.5 + 4.5 * score;
+  // };
+  // const compareTexts = async (text1: string, text2: string) => {
+  //   const embedding1 = await generateEmbeddings(text1);
+  //   const embedding2 = await generateEmbeddings(text2);
+
+  //   if (embedding1 && embedding2) {
+  //     const similarity = cosineSimilarity(embedding1, embedding2);
+  //     const transformedScore = transformScore(similarity);
+  //     setScore(parseFloat(transformedScore.toFixed(2)));
+  //   }
+  //   return setComparing(false);
+  // };
+
+  const scoreTexts = async (jobDescription: string, cvText: string) => {
     try {
       const openai = new OpenAI({
         apiKey: openAiKey,
         dangerouslyAllowBrowser: true,
       });
-      const response = await openai.embeddings.create({
-        model: "text-embedding-3-small", // Confirm the latest model from OpenAI's documentation
-        input: text,
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant that evaluates the relevance and similarity between job descriptions and CV texts.",
+          },
+          {
+            role: "user",
+            content: `
+            Compare the following job description and CV text and evaluate their relevance and similarity.
+
+            Return Score between 1 to 10.
+            1 for no similarity and 10 for perfect similarity.
+
+            And a one sentence summary of comparison with differences.
+
+            Return the score and summary as html.:
+            <div>Score: <span>7.6</span></div>
+            ----------------
+            <div>Summary: {Summary}</div>
+      
+            Job Description:
+            ${jobDescription}
+      
+            CV Text:
+            ${cvText}
+            
+            `,
+          },
+        ],
+        max_tokens: 500,
+        // temperature: 0.7,
       });
-      return response.data[0].embedding;
+
+      return response.choices[0].message.content?.trim();
     } catch (error) {
-      setError("Error generating embeddings: " + error);
-      console.error("Error generating embeddings:", error);
+      setError("Error generating completions " + error);
+      console.error("Error generating completions:", error);
       return null;
     }
-  };
-
-  const cosineSimilarity = (vecA: number[], vecB: number[]) => {
-    let dotProduct = 0.0,
-      normA = 0.0,
-      normB = 0.0;
-    for (let i = 0; i < vecA.length; i++) {
-      dotProduct += vecA[i] * vecB[i];
-      normA += vecA[i] ** 2;
-      normB += vecB[i] ** 2;
-    }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-  };
-
-  const transformScore = (score: number) => {
-    // Transform from [-1, 1] to [1, 10]
-    return 5.5 + 4.5 * score;
-  };
-  const compareTexts = async (text1: string, text2: string) => {
-    const embedding1 = await generateEmbeddings(text1);
-    const embedding2 = await generateEmbeddings(text2);
-
-    if (embedding1 && embedding2) {
-      const similarity = cosineSimilarity(embedding1, embedding2);
-      const transformedScore = transformScore(similarity);
-      console.log(`Similarity Score (1-10): ${transformedScore.toFixed(2)}`);
-      setScore(parseFloat(transformedScore.toFixed(2)));
-    } else {
-      setError("Failed to generate embeddings for texts.");
-      console.log("Failed to generate embeddings for texts.");
-    }
-    return setComparing(false);
   };
 
   useEffect(() => {
@@ -202,7 +257,7 @@ function App() {
     };
   }, [resumeFile]);
 
-  const saveOpenAIKey = (e: React.FormEvent<HTMLFormElement>) => {
+  const saveSettings = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.target as HTMLFormElement);
     const apiKey = data.get("apiKey") as string;
@@ -211,127 +266,127 @@ function App() {
       return;
     }
     setOpenAiKey(apiKey);
+
     if (isChromeExtension) {
       chrome.storage.local.set({ openAiKey: apiKey });
     } else {
       localStorage.setItem("openAiKey", apiKey);
     }
+    setIsSettingsOpen(false);
   };
 
-  const openSettings = () => {
-    setIsSettingsOpen(!isSettingsOpen);
+  const toggleSettingsView = () => {
+    setIsSettingsOpen((prev) => !prev);
   };
 
   return (
     <div className="bg-gray-900 text-white relative">
-      <button className="absolute right-0 m-2" onClick={openSettings}>
-        <img src="/settings.svg" width={18} />
-      </button>
+      {openAiKey && (
+        <button className="absolute right-0 m-2" onClick={toggleSettingsView}>
+          <img src="/settings.svg" width={18} />
+        </button>
+      )}
 
       <div className="w-80 p-4">
-        {!openAiKey ||
-          (isSettingsOpen && (
-            <form onSubmit={saveOpenAIKey}>
-              <label htmlFor="apiKey">Save OpenAI API Key:</label>
+        {isSettingsOpen || !openAiKey ? (
+          <form onSubmit={saveSettings}>
+            <div>
+              <label htmlFor="apiKey" className="font-bold">
+                OpenAI API Key:
+              </label>
               <input
                 type="password"
                 name="apiKey"
+                id="apiKey"
                 placeholder="OpenAI API Key"
                 className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
                 required
                 autoComplete="openai-key"
+                defaultValue={openAiKey}
+                onChange={() => setError(null)}
               />
-              <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center gap-2 mt-2">
-                Save OpenAI Key
-              </button>
-            </form>
-          ))}
-        {openAiKey && (
-          <form onSubmit={handleSubmit}>
-            {!resumeData?.text && (
-              <label
-                className="block mb-2 font-bold text-gray-900 dark:text-white"
-                htmlFor="file_input"
-              >
-                Upload your CV (PDF):
-              </label>
-            )}
-            <div className="">
-              {!resumeData?.text ? (
-                <label
-                  htmlFor="resume"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+              <div className="text-sm mt-2 ">
+                Visit{" "}
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  className="underline hover:text-gray-500 font-bold"
                 >
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg
-                      className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 20 16"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                      />
-                    </svg>
-                    <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="font-semibold">Click to upload</span>
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PDF
-                    </p>
-                  </div>
+                  here
+                </a>{" "}
+                to get your key.
+                <div className="mt-1">
+                  We are using <span className="font-bold">gpt-4o</span> model
+                  for this extension.
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 h-[1px] bg-gray-400 " />
+
+            <div className="mt-3">
+              {resumeData ? (
+                <div>
+                  <label htmlFor="resume" className="font-bold">
+                    Resume File:
+                  </label>
+                  <div className="mt-2 italic">{resumeData?.fileName}</div>
+                  <button
+                    onClick={newCv}
+                    type="submit"
+                    className="mt-4 text-white underline hover:text-gray-500"
+                  >
+                    Upload a new Resume
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="resume" className="font-bold">
+                    Upload your CV (PDF):
+                  </label>
+
                   <input
-                    className="hidden"
+                    className="mt-2"
                     type="file"
                     id="resume"
                     name="resume"
                     accept=".pdf"
                     onChange={handleFileChange}
+                    required
                   />
-                </label>
-              ) : (
-                <div>
-                  <div className="text-white italic">
-                    {resumeData?.fileName}
-                  </div>
-                  <button
-                    onClick={newCv}
-                    type="submit"
-                    className="mt-4 text-white underline"
-                  >
-                    Upload a new CV
-                  </button>
                 </div>
               )}
             </div>
 
-            {resumeData?.text && (
-              <div className="mt-4">
-                <button
-                  disabled={comparing}
-                  type="submit"
-                  className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
-                >
-                  <img src="/rate.png" width={24} />
-                  {comparing
-                    ? "Rating your CV..."
-                    : "Rate my CV for this job post"}
-                </button>
-              </div>
-            )}
-          </form>
-        )}
+            <div className="mt-4 h-[1px] bg-gray-400 " />
 
-        {score && (
+            <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
+              Save Settings
+            </button>
+          </form>
+        ) : (
           <div>
-            <div className="text-white mt-4">
-              Score: <span className="font-bold">{score} </span>
-            </div>
+            <form onSubmit={handleSubmit}>
+              {resumeData?.text && (
+                <div className="">
+                  <button
+                    disabled={comparing}
+                    type="submit"
+                    className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded flex items-center gap-2"
+                  >
+                    <img src="/rate.png" width={24} />
+                    {comparing
+                      ? "Rating your CV..."
+                      : "Rate my CV for this job post"}
+                  </button>
+                </div>
+              )}
+            </form>
+            {content && (
+              <div
+                className="text-white mt-4"
+                dangerouslySetInnerHTML={{ __html: content }}
+              />
+            )}
           </div>
         )}
 
