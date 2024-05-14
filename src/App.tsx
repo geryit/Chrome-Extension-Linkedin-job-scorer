@@ -69,12 +69,13 @@ function App() {
             );
             return;
           }
-          // compareTexts(resumeData.text, response.content).then(() =>
-          //   setComparing(false)
-          // );
-
-          scoreTexts(testJobDescription, resumeData.text).then((res) => {
+          scoreTexts(response.content, resumeData.text).then((res) => {
             setContent(res || "");
+
+            chrome.tabs.sendMessage(activeTab as number, {
+              action: "injectResult",
+              result: res,
+            });
             setComparing(false);
           });
         }
@@ -82,55 +83,10 @@ function App() {
     });
   };
 
-  // const generateEmbeddings = async (text: string) => {
-  //   try {
-  //     const openAi = new OpenAI({
-  //       apiKey: openAiKey,
-  //       dangerouslyAllowBrowser: true,
-  //     });
-
-  //     const response = await openAi.embeddings.create({
-  //       model: "text-embedding-3-small", // Confirm the latest model from OpenAI's documentation
-  //       input: text,
-  //     });
-  //     return response.data[0].embedding;
-  //   } catch (error) {
-  //     setError("Error generating embeddings: " + error);
-  //     console.error("Error generating embeddings:", error);
-  //     return null;
-  //   }
-  // };
-
-  // const cosineSimilarity = (vecA: number[], vecB: number[]) => {
-  //   let dotProduct = 0.0,
-  //     normA = 0.0,
-  //     normB = 0.0;
-  //   for (let i = 0; i < vecA.length; i++) {
-  //     dotProduct += vecA[i] * vecB[i];
-  //     normA += vecA[i] ** 2;
-  //     normB += vecB[i] ** 2;
-  //   }
-  //   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-  // };
-
-  // const transformScore = (score: number) => {
-  //   // Transform from [-1, 1] to [1, 10]
-  //   return 5.5 + 4.5 * score;
-  // };
-  // const compareTexts = async (text1: string, text2: string) => {
-  //   const embedding1 = await generateEmbeddings(text1);
-  //   const embedding2 = await generateEmbeddings(text2);
-
-  //   if (embedding1 && embedding2) {
-  //     const similarity = cosineSimilarity(embedding1, embedding2);
-  //     const transformedScore = transformScore(similarity);
-  //     setScore(parseFloat(transformedScore.toFixed(2)));
-  //   }
-  //   return setComparing(false);
-  // };
-
   const scoreTexts = async (jobDescription: string, cvText: string) => {
     try {
+      return "Score(1-10): <span>8</span><br>Summary: The CV is a good match for the job description.";
+
       const openai = new OpenAI({
         apiKey: openAiKey,
         dangerouslyAllowBrowser: true,
@@ -139,11 +95,6 @@ function App() {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content:
-              "You are a helpful assistant that evaluates the relevance and similarity between job descriptions and CV texts.",
-          },
           {
             role: "user",
             content: `
@@ -154,8 +105,8 @@ function App() {
 
             And a one sentence summary of comparison with differences.
 
-            Return the score and summary as html.:
-            <div>Score: <span>7.6</span></div>
+            Return the score and summary as html (not in MD format):
+            <div>Score(1-10): <span>{score}</span></div>
             ----------------
             <div>Summary: {Summary}</div>
       
@@ -172,7 +123,9 @@ function App() {
         // temperature: 0.7,
       });
 
-      return response.choices[0].message.content?.trim();
+      const resp = response.choices[0].message.content?.trim();
+
+      return resp;
     } catch (error) {
       setError("Error generating completions " + error);
       console.error("Error generating completions:", error);
