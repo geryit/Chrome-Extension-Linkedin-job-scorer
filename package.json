@@ -1,6 +1,7 @@
 {
   "name": "linkedin-job-rating",
-  "private": true,
+  "description": "A Chrome extension that rates job postings on LinkedIn based on the job description with AI",
+  "private": false,
   "version": "1.0.0",
   "type": "module",
   "scripts": {

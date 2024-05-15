@@ -1,6 +1,6 @@
 {
   "name": "Linkedin CV Scorer with AI",
-  "description": "Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match.",
+  "description": "Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match with AI.",
   "version": "1.0",
   "manifest_version": 3,
   "action": {
@@ -10,7 +10,7 @@
     "48": "logo-48p.png",
     "128": "logo-128p.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/jobs/*?currentJobId=*"],
