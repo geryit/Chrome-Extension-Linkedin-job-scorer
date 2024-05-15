@@ -25,6 +25,11 @@ jobs:
         run: |
           cd dist && zip -r linkedin-cv-scorer.zip *
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "geryit@gmail.com"
+          git config --global user.name "Goksel Eryigit"
+
       - name: Tag the repository
         id: tag
         run: |
