@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import OpenAI from "openai";
-import { pdfjs } from "react-pdf";
+import * as pdfjsLib from "pdfjs-dist";
 import testJobDescription from "./testJobDescription";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.js",
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs";
 
 const isChromeExtension =
   typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
@@ -182,7 +180,7 @@ ${cvText}
     reader.onload = async () => {
       const url = reader.result as string;
       try {
-        const pdf = await pdfjs.getDocument({ url }).promise;
+        const pdf = await pdfjsLib.getDocument({ url }).promise;
         const numPages = pdf.numPages;
         let text = "";
 
