@@ -28,6 +28,7 @@ jobs:
           cd dist && zip -r linkedin-cv-scorer.zip *
 
       - name: Bump version and push tag
+        id: bump
         uses: anothrNick/github-tag-action@v1 # Don't use @master or @v1 unless you're happy to test the latest version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
@@ -37,3 +38,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: linkedin-cv-scorer.zip
+          tag_name: ${{ steps.bump.outputs.new_tag }}
