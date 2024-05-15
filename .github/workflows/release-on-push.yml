@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "latest"
-˝
+
       - name: Build
         run: npm i && npm run build
 
