@@ -1,6 +1,6 @@
 # Chrome Extension: Linkedin job scorer
 
-Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match.
+Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match with AI.
 
 Compare the uploaded CV and job description on Linkedin job page with AI and score from 1 to 10.
 

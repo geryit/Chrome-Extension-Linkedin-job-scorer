@@ -10,7 +10,7 @@
     "48": "logo-48p.png",
     "128": "logo-128p.png"
   },
-  "permissions": ["storage", "scripting"],
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/jobs/*?currentJobId=*"],

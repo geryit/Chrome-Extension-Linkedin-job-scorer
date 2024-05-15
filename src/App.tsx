@@ -3,8 +3,10 @@ import OpenAI from "openai";
 import * as pdfjsLib from "pdfjs-dist";
 import testJobDescription from "./testJobDescription";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 const isChromeExtension =
   typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
