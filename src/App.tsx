@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import OpenAI from "openai";
+import { useEffect, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import testJobDescription from "./testJobDescription";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -10,6 +8,33 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 const isChromeExtension =
   typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
+
+// const jobsLink = "https://www.linkedin.com/jobs/collections/recommended/";
+
+// const wrongUrlWarning = (
+//   <div className="text-sm">
+//     <div>
+//       No job description found. Are you sure you are viewing <b>a job post</b>{" "}
+//       in Linkedin?
+//     </div>
+//     <div className="mt-2">
+//       Visit{" "}
+//       <a
+//         className="underline hover:text-gray-300"
+//         onClick={() =>
+//           chrome.tabs.create({
+//             url: jobsLink,
+//           })
+//         }
+//         href={jobsLink}
+//       >
+//         https://www.linkedin.com/jobs
+//       </a>{" "}
+//       for recommended jobs for you.
+//     </div>
+//     <div className="mt-2">Also, you might wanna refresh the page.</div>
+//   </div>
+// );
 
 function App() {
   const [openAiKey, setOpenAiKey] = useState("");
@@ -20,8 +45,6 @@ function App() {
     fileName: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [comparing, setComparing] = useState(false);
-  const [content, setContent] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -35,109 +58,8 @@ function App() {
   const newCv = () => {
     setResumeFile(null);
     setResumeData(null);
-    setContent(null);
     setError(null);
   };
-
-  const scoreTexts = useCallback(
-    async (jobDescription: string, cvText: string) => {
-      try {
-        // return "Score(1-10): <span>8</span><br>Summary: The CV is a good match for the job description.";
-
-        const openai = new OpenAI({
-          apiKey: openAiKey,
-          dangerouslyAllowBrowser: true,
-        });
-
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "user",
-              content: `
-Compare the following job description and CV text and evaluate their relevance and similarity.
-
-Return Score between 1 to 10.
-1 for no similarity and 10 for perfect similarity.
-
-And two sentence summary of comparison with differences.
-Summary should check language skills. 
-
-Dont return in MD format but in HTML format.
-
-Return the score and summary as html (not in MD format):
-<div>Score(1-10): <span>{score}</span></div>
-----------------
-<div>Summary: {Summary}</div>
-
-Job Description:
-${jobDescription}
-
-CV Text:
-${cvText}
-
-`,
-            },
-          ],
-          max_tokens: 500,
-          // temperature: 0.7,
-        });
-
-        const resp = response.choices[0].message.content?.trim();
-
-        return resp;
-      } catch (error) {
-        setError("Error generating completions: " + error);
-        console.error("Error generating completions:", error);
-        return null;
-      }
-    },
-    [openAiKey]
-  );
-
-  const scoreIt = useCallback(async () => {
-    if (!resumeData) {
-      setError("No text found in the resume. Can you try uploading it again?");
-      return;
-    }
-
-    setContent(null);
-    setComparing(true);
-
-    if (!isChromeExtension) {
-      scoreTexts(testJobDescription, resumeData.text).then((res) => {
-        setContent(res || "");
-        setComparing(false);
-      });
-      return;
-    }
-
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const activeTab = tabs[0].id;
-      chrome.tabs.sendMessage(
-        activeTab as number,
-        { action: "getDivContent" },
-        (response) => {
-          if (!response || !response.content) {
-            setError(
-              "No job description found. Are you sure you are on a job post in Linkedin?"
-            );
-            setComparing(false);
-            return;
-          }
-          scoreTexts(response.content, resumeData.text).then((res) => {
-            setContent(res || "");
-
-            chrome.tabs.sendMessage(activeTab as number, {
-              action: "injectResult",
-              result: res,
-            });
-            setComparing(false);
-          });
-        }
-      );
-    });
-  }, [resumeData, scoreTexts]);
 
   useEffect(() => {
     if (isChromeExtension) {
@@ -238,13 +160,6 @@ ${cvText}
     setIsSettingsOpen((prev) => !prev);
   };
 
-  // run on popup open
-  useEffect(() => {
-    if (openAiKey && resumeData) {
-      scoreIt();
-    }
-  }, [openAiKey, resumeData, scoreIt]);
-
   return (
     <div className="bg-gray-900 text-white relative">
       {openAiKey && (
@@ -257,106 +172,83 @@ ${cvText}
       )}
 
       <div className="w-96 p-4">
-        {isSettingsOpen || !openAiKey ? (
-          <form onSubmit={saveSettings}>
-            <div>
-              <label htmlFor="apiKey" className="font-bold">
-                OpenAI API Key:
-              </label>
-              <input
-                type="password"
-                name="apiKey"
-                id="apiKey"
-                placeholder="OpenAI API Key"
-                className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
-                required
-                autoComplete="openai-key"
-                defaultValue={openAiKey}
-                onChange={() => setError(null)}
-              />
-              <div className="text-sm mt-2 ">
-                Visit{" "}
-                <a
-                  href="https://platform.openai.com/api-keys"
-                  className="underline hover:text-gray-500 font-bold"
-                >
-                  here
-                </a>{" "}
-                to get your key.
-                <div className="mt-1">
-                  We are using <span className="font-bold">gpt-4o</span> model
-                  for this extension.
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 h-[1px] bg-gray-400 " />
-
-            <div className="mt-3">
-              {resumeData ? (
-                <div>
-                  <label htmlFor="resume" className="font-bold">
-                    Resume File:
-                  </label>
-                  <div className="mt-2 italic">{resumeData?.fileName}</div>
-                  <button
-                    onClick={newCv}
-                    type="submit"
-                    className="mt-4 text-white underline hover:text-gray-500"
+        {isSettingsOpen ||
+          (!openAiKey && (
+            <form onSubmit={saveSettings}>
+              <div>
+                <label htmlFor="apiKey" className="font-bold">
+                  OpenAI API Key:
+                </label>
+                <input
+                  type="password"
+                  name="apiKey"
+                  id="apiKey"
+                  placeholder="OpenAI API Key"
+                  className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
+                  required
+                  autoComplete="openai-key"
+                  defaultValue={openAiKey}
+                  onChange={() => setError(null)}
+                />
+                <div className="text-sm mt-2 ">
+                  Visit{" "}
+                  <a
+                    href="https://platform.openai.com/api-keys"
+                    className="underline hover:text-gray-500 font-bold"
                   >
-                    Upload a new Resume
-                  </button>
+                    here
+                  </a>{" "}
+                  to get your key.
+                  <div className="mt-1">
+                    We are using <span className="font-bold">gpt-4o</span> model
+                    for this extension.
+                  </div>
                 </div>
-              ) : (
-                <div>
-                  <label htmlFor="resume" className="font-bold">
-                    Upload your CV (PDF):
-                  </label>
-
-                  <input
-                    className="mt-2"
-                    type="file"
-                    id="resume"
-                    name="resume"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    required
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 h-[1px] bg-gray-400 " />
-
-            <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
-              Save Settings
-            </button>
-          </form>
-        ) : (
-          <div>
-            {content && (
-              <div
-                className="text-white mb-4"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
-            )}
-            {resumeData?.text && !error && (
-              <div className="">
-                <button
-                  onClick={scoreIt}
-                  disabled={comparing}
-                  type="submit"
-                  className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 text-sm"
-                >
-                  <img src="/logo-48p.png" width={24} />
-                  {comparing
-                    ? "Rating your CV..."
-                    : "Rate my CV for this job post (again)"}
-                </button>
               </div>
-            )}
-          </div>
-        )}
+
+              <div className="mt-4 h-[1px] bg-gray-400 " />
+
+              <div className="mt-3">
+                {resumeData ? (
+                  <div>
+                    <label htmlFor="resume" className="font-bold">
+                      Resume File:
+                    </label>
+                    <div className="mt-2 italic">{resumeData?.fileName}</div>
+                    <button
+                      onClick={newCv}
+                      type="submit"
+                      className="mt-4 text-white underline hover:text-gray-500"
+                    >
+                      Upload a new Resume
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label htmlFor="resume" className="font-bold">
+                      Upload your CV (PDF):
+                    </label>
+
+                    <input
+                      className="mt-2"
+                      type="file"
+                      id="resume"
+                      name="resume"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 h-[1px] bg-gray-400 " />
+
+              <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
+                Save Settings
+              </button>
+            </form>
+          ))}
 
         {error && (
           <div

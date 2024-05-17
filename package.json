@@ -6,13 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content.ts src/background.ts --outDir dist",
+    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content.ts src/service-worker.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "zip": "cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"
   },
   "dependencies": {
-    "openai": "^4.47.1",
     "pdfjs-dist": "^4.2.67",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

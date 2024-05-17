@@ -1,32 +1,82 @@
-// Listen for messages from the background script or popup
-chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
-  if (request.action === "getDivContent") {
-    const content = document.querySelector<HTMLElement>(
-      ".jobs-box__html-content"
-    )?.innerText;
-    if (content) {
-      sendResponse({ content });
-    }
-  }
-  if (request.action === "injectResult") {
-    const targetElement = document.querySelector(
-      ".jobs-search__job-details--wrapper"
-    );
-    if (targetElement) {
-      document.querySelector("#resume-result")?.remove();
-      const resultElement = document.createElement("div");
-      resultElement.innerHTML = request.result;
-      resultElement.id = "resume-result";
-      resultElement.style.marginBottom = "20px";
-      resultElement.style.padding = "10px";
-      resultElement.style.borderBottom = "2px solid #fff";
-      resultElement.style.backgroundColor = "#1c4974";
-      resultElement.style.color = "#fff";
-      targetElement.insertBefore(resultElement, targetElement.firstChild);
-    }
-  }
+const port = chrome.runtime.connect({ name: "scoreItPort" });
 
+const getScorerBtn = () =>
+  document.querySelector<HTMLButtonElement>("#scorer-btn");
+
+const getScorerResultEl = () =>
+  document.querySelector<HTMLButtonElement>("#scorer-result");
+
+const btnDefaultText = "Score My CV For This Job";
+
+const injectBtn = () => {
+  const targetElement = document.querySelector(".scaffold-layout");
+  if (targetElement) {
+    const wrapperElement = document.createElement("div");
+    wrapperElement.innerHTML = `
+    <div id="scorer-wrapper" style="padding: 1rem; max-width: 115rem; margin: auto;">
+        <div style="display: flex;justify-content: center;">
+          <button
+            id="scorer-btn"
+            style=" color: #fff; background-color: #2661ba; padding: 1rem; font-weight: 700; "
+          >
+            ${btnDefaultText}
+          </button>
+        </div>
+        <div
+          id="scorer-result"
+          style="padding: 10px; background-color: rgb(28, 73, 116); color: #fff;"
+          class="hidden"
+        />
+      </div>
+    `;
+    targetElement.insertBefore(wrapperElement, targetElement.firstChild);
+    const scorerBtn = getScorerBtn();
+    scorerBtn?.addEventListener("click", () => {
+      scorerBtn.textContent = "Scoring...";
+      scorerBtn.disabled = true;
+      const jobContent = document.querySelector<HTMLElement>(
+        ".jobs-box__html-content"
+      )?.innerText;
+
+      if (jobContent) {
+        port.postMessage({ action: "scoreIt", jobContent });
+      }
+    });
+  }
+};
+
+setTimeout(() => {
+  injectBtn();
+}, 3000);
+
+const injectResult = (result: string) => {
+  const scorerBtn = getScorerBtn();
+  const scorerResultEl = getScorerResultEl();
+
+  if (scorerResultEl) {
+    scorerResultEl.innerHTML = result;
+    scorerBtn?.classList.toggle("hidden");
+    scorerResultEl?.classList.toggle("hidden");
+  }
+};
+
+port.onMessage.addListener(function (msg) {
+  if (msg.action === "injectResult") {
+    injectResult(msg.result);
+  }
+});
+
+chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "urlChanged") {
-    document.querySelector("#resume-result")?.remove();
+    console.log("URL Changed")
+    const scorerBtn = getScorerBtn();
+    const scorerResultEl = getScorerResultEl();
+
+    if (scorerBtn) {
+      scorerBtn.textContent = btnDefaultText;
+      scorerBtn?.classList.toggle("hidden");
+      scorerBtn.disabled = false;
+    } 
+    scorerResultEl?.classList.toggle("hidden");
   }
 });
