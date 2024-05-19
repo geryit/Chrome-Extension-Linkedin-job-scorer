@@ -15,4 +15,4 @@ npm run build
 
 Download the Live Extension: https://chromewebstore.google.com/detail/linkedin-cv-scorer-with-a/iecbjjbbjoanoijdhmppogkcndljcjfb
 
-Watch this video for the rest: https://www.youtube.com/watch?v=4ykBFAjjXe4&t
+Watch this video for the rest: https://www.youtube.com/watch?v=4ykBFAjjXe4
