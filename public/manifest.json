@@ -1,6 +1,6 @@
 {
-  "name": "Linkedin CV Scorer with AI",
-  "description": "Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match with AI.",
+  "name": "Linkedin CV Scorer with OpenAI ChatGPT",
+  "description": "Enhance your job search by seamlessly comparing LinkedIn job descriptions with your CV to ensure the perfect match with OpenAI ChatGPT.",
   "version": "1.0",
   "manifest_version": 3,
   "action": {

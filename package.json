@@ -1,6 +1,6 @@
 {
-  "name": "linkedin-job-rating",
-  "description": "A Chrome extension that rates job postings on LinkedIn based on the job description with AI",
+  "name": "linkedin-job-rating-with-openai-chatgpt",
+  "description": "A Chrome extension that rates job postings on LinkedIn based on the job description with OpenAI ChatGPT",
   "private": false,
   "version": "1.0.0",
   "type": "module",
