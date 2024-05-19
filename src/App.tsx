@@ -9,36 +9,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 const isChromeExtension =
   typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
 
-// const jobsLink = "https://www.linkedin.com/jobs/collections/recommended/";
-
-// const wrongUrlWarning = (
-//   <div className="text-sm">
-//     <div>
-//       No job description found. Are you sure you are viewing <b>a job post</b>{" "}
-//       in Linkedin?
-//     </div>
-//     <div className="mt-2">
-//       Visit{" "}
-//       <a
-//         className="underline hover:text-gray-300"
-//         onClick={() =>
-//           chrome.tabs.create({
-//             url: jobsLink,
-//           })
-//         }
-//         href={jobsLink}
-//       >
-//         https://www.linkedin.com/jobs
-//       </a>{" "}
-//       for recommended jobs for you.
-//     </div>
-//     <div className="mt-2">Also, you might wanna refresh the page.</div>
-//   </div>
-// );
-
 function App() {
   const [openAiKey, setOpenAiKey] = useState("");
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<{
     text: string;
@@ -153,102 +125,90 @@ function App() {
     } else {
       localStorage.setItem("openAiKey", apiKey);
     }
-    setIsSettingsOpen(false);
-  };
 
-  const toggleSettingsView = () => {
-    setIsSettingsOpen((prev) => !prev);
+    window.open(
+      "https://www.linkedin.com/jobs/collections/recommended/",
+      "linkedinTab"
+    );
   };
 
   return (
     <div className="bg-gray-900 text-white relative">
-      {openAiKey && (
-        <button
-          className="absolute right-0 m-2 hover:brightness-50"
-          onClick={toggleSettingsView}
-        >
-          <img src="/settings.svg" width={18} alt="Settings" title="Settings" />
-        </button>
-      )}
-
       <div className="w-96 p-4">
-        {isSettingsOpen ||
-          (!openAiKey && (
-            <form onSubmit={saveSettings}>
+        <form onSubmit={saveSettings}>
+          <div>
+            <label htmlFor="apiKey" className="font-bold">
+              OpenAI API Key:
+            </label>
+            <input
+              type="password"
+              name="apiKey"
+              id="apiKey"
+              placeholder="OpenAI API Key"
+              className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
+              required
+              autoComplete="openai-key"
+              defaultValue={openAiKey}
+              onChange={() => setError(null)}
+            />
+            <div className="text-sm mt-2 ">
+              Visit{" "}
+              <a
+                href="https://platform.openai.com/api-keys"
+                className="underline hover:text-gray-500 font-bold"
+              >
+                here
+              </a>{" "}
+              to get your key.
+              <div className="mt-1">
+                We are using <span className="font-bold">gpt-4o</span> model for
+                this extension.
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 h-[1px] bg-gray-400 " />
+
+          <div className="mt-3">
+            {resumeData ? (
               <div>
-                <label htmlFor="apiKey" className="font-bold">
-                  OpenAI API Key:
+                <label htmlFor="resume" className="font-bold">
+                  Resume File:
                 </label>
+                <div className="mt-2 italic">{resumeData?.fileName}</div>
+                <button
+                  onClick={newCv}
+                  type="submit"
+                  className="mt-4 text-white underline hover:text-gray-500"
+                >
+                  Upload a new Resume
+                </button>
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="resume" className="font-bold">
+                  Upload your CV (PDF):
+                </label>
+
                 <input
-                  type="password"
-                  name="apiKey"
-                  id="apiKey"
-                  placeholder="OpenAI API Key"
-                  className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
+                  className="mt-2"
+                  type="file"
+                  id="resume"
+                  name="resume"
+                  accept=".pdf"
+                  onChange={handleFileChange}
                   required
-                  autoComplete="openai-key"
-                  defaultValue={openAiKey}
-                  onChange={() => setError(null)}
                 />
-                <div className="text-sm mt-2 ">
-                  Visit{" "}
-                  <a
-                    href="https://platform.openai.com/api-keys"
-                    className="underline hover:text-gray-500 font-bold"
-                  >
-                    here
-                  </a>{" "}
-                  to get your key.
-                  <div className="mt-1">
-                    We are using <span className="font-bold">gpt-4o</span> model
-                    for this extension.
-                  </div>
-                </div>
               </div>
+            )}
+          </div>
 
-              <div className="mt-4 h-[1px] bg-gray-400 " />
+          <div className="mt-4 h-[1px] bg-gray-400 " />
 
-              <div className="mt-3">
-                {resumeData ? (
-                  <div>
-                    <label htmlFor="resume" className="font-bold">
-                      Resume File:
-                    </label>
-                    <div className="mt-2 italic">{resumeData?.fileName}</div>
-                    <button
-                      onClick={newCv}
-                      type="submit"
-                      className="mt-4 text-white underline hover:text-gray-500"
-                    >
-                      Upload a new Resume
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <label htmlFor="resume" className="font-bold">
-                      Upload your CV (PDF):
-                    </label>
-
-                    <input
-                      className="mt-2"
-                      type="file"
-                      id="resume"
-                      name="resume"
-                      accept=".pdf"
-                      onChange={handleFileChange}
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 h-[1px] bg-gray-400 " />
-
-              <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
-                Save Settings
-              </button>
-            </form>
-          ))}
+          <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
+            Save Settings
+          </button>
+        </form>
 
         {error && (
           <div
@@ -256,6 +216,18 @@ function App() {
             role="alert"
           >
             <span className="">{error}</span>
+          </div>
+        )}
+
+        {openAiKey ? (
+          <div className="border-t-2 border-white pt-4 mt-8 font-bold text-lg text-green-700">
+            You are ready to use the extension now. Visit a job page in Linkedin
+            now and click "<strong>Score My CV For This Job</strong>" button on
+            the top of the page to get the score.
+          </div>
+        ) : (
+          <div className="border-t-2 border-white pt-4 mt-8 font-bold text-lg text-green-700">
+            Add your OpenAI API key and upload your CV to get started.
           </div>
         )}
       </div>

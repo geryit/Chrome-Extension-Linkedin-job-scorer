@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content.ts src/service-worker.ts --outDir dist",
+    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content-scripts.ts src/service-worker.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "zip": "cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"

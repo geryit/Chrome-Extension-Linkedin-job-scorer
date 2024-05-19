@@ -10,14 +10,11 @@
     "48": "logo-48p.png",
     "128": "logo-128p.png"
   },
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "content_scripts": [
     {
-      "matches": ["*://*.linkedin.com/jobs/*?currentJobId=*"],
-      "js": ["content.js"]
+      "matches": ["*://*.linkedin.com/*"],
+      "js": ["content-scripts.js"]
     }
-  ],
-  "background": {
-    "service_worker": "service-worker.js"
-  }
+  ]
 }
