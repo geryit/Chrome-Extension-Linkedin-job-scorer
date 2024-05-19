@@ -13,7 +13,6 @@ const injectBtn = () => {
     if (!result.resume || !result.openAiKey) {
       return injectErrorMsg();
     }
-    document.querySelector("#scorer-wrapper")?.remove();
 
     const jobContentEl = document.querySelector<HTMLElement>(
       ".jobs-box__html-content"
@@ -152,13 +151,18 @@ ${cvText}
   }
 };
 
-setTimeout(() => {
-  injectBtn();
-}, 1000);
+setTimeout(injectBtn, 1000);
 
 // @ts-expect-error: error
-window.navigation.addEventListener("navigate", () => {
-  setTimeout(() => {
-    injectBtn();
-  }, 1000);
+window.navigation.addEventListener("navigate", (event) => {
+  const newURL = new URL(event.destination.url);
+  if (
+    /^https?:\/\/(.+\.)?linkedin\.com\/jobs\/.*\?currentJobId=.*$/.test(
+      newURL.href
+    )
+  ) {
+    document.querySelector("#scorer-wrapper")?.remove();
+
+    setTimeout(injectBtn, 1000);
+  }
 });
