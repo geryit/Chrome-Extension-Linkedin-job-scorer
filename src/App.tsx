@@ -155,6 +155,7 @@ function App() {
               Visit{" "}
               <a
                 href="https://platform.openai.com/api-keys"
+                target="_blank"
                 className="underline hover:text-gray-500 font-bold"
               >
                 here
