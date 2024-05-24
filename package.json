@@ -9,7 +9,7 @@
     "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/*.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "zip": "cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"
+    "zip": "npm run build && cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"
   },
   "dependencies": {
     "pdfjs-dist": "^4.2.67",
