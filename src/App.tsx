@@ -133,7 +133,7 @@ function App() {
   };
 
   return (
-    <div className="bg-gray-900 text-white relative">
+    <div className="bg-gray-900 text-white relative min-h-dvh flex justify-center">
       <div className="w-96 p-4">
         <form onSubmit={saveSettings}>
           <div>

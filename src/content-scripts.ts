@@ -19,9 +19,12 @@ const injectBtn = () => {
     );
     const targetElement = document.querySelector(".scaffold-layout");
     if (targetElement && jobContentEl) {
+      document.querySelector("#scorer-wrapper")?.remove();
+
       const wrapperElement = document.createElement("div");
+      wrapperElement.id = "scorer-wrapper";
       wrapperElement.innerHTML = `
-    <div id="scorer-wrapper" style="padding: 1rem; max-width: 115rem; margin: auto;">
+    <div style="padding: 1rem; max-width: 115rem; margin: auto;">
         <div style="display: flex;justify-content: center;">
           <button
             id="scorer-btn"
@@ -161,8 +164,6 @@ window.navigation.addEventListener("navigate", (event) => {
       newURL.href
     )
   ) {
-    document.querySelector("#scorer-wrapper")?.remove();
-
     setTimeout(injectBtn, 1000);
   }
 });

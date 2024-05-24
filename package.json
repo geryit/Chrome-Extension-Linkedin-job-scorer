@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/content-scripts.ts --outDir dist",
+    "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/*.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "zip": "cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"
@@ -18,11 +18,11 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
-    "@types/react": "^18.3.2",
+    "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.10.0",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
