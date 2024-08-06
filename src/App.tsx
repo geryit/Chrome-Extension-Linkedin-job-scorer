@@ -138,7 +138,7 @@ function App() {
         <form onSubmit={saveSettings}>
           <div>
             <label htmlFor="apiKey" className="font-bold">
-              OpenAI API Key:
+              OpenAI API Secret Key:
             </label>
             <input
               type="password"
@@ -158,12 +158,12 @@ function App() {
                 target="_blank"
                 className="underline hover:text-gray-500 font-bold"
               >
-                here
+                https://platform.openai.com/api-keys
               </a>{" "}
-              to get your key.
+              to create your secret key.
               <div className="mt-1">
-                We are using <span className="font-bold">gpt-4o</span> model for
-                this extension.
+                We are using <span className="font-bold">gpt-4o mini</span>{" "}
+                model for this extension which costs $0.00008 per token.
               </div>
             </div>
           </div>

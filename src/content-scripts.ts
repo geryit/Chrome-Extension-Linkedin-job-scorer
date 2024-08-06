@@ -112,7 +112,7 @@ const scoreTexts = async (
         Authorization: `Bearer ${openAiKey}`, // Replace 'YOUR_API_KEY' with your actual API key
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "user",
