@@ -10,7 +10,6 @@ const isChromeExtension =
   typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.id;
 
 function App() {
-  const [openAiKey, setOpenAiKey] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<{
     text: string;
@@ -41,21 +40,10 @@ function App() {
           setResumeData(resumeDataFromStorage);
         }
       });
-      chrome.storage?.local.get(["openAiKey"], (result) => {
-        const openAIApiKeyFromStorage = result.openAiKey;
-        if (openAIApiKeyFromStorage) {
-          setOpenAiKey(openAIApiKeyFromStorage);
-        }
-      });
     } else {
       const resumeDataFromStorage = localStorage.getItem("resume");
       if (resumeDataFromStorage) {
         setResumeData(JSON.parse(resumeDataFromStorage));
-      }
-
-      const openAIApiKeyFromStorage = localStorage.getItem("openAiKey");
-      if (openAIApiKeyFromStorage) {
-        setOpenAiKey(openAIApiKeyFromStorage);
       }
     }
   }, []);
@@ -112,19 +100,6 @@ function App() {
 
   const saveSettings = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = new FormData(e.target as HTMLFormElement);
-    const apiKey = data.get("apiKey") as string;
-    if (!apiKey) {
-      setError("Please enter an API key");
-      return;
-    }
-    setOpenAiKey(apiKey);
-
-    if (isChromeExtension) {
-      chrome.storage.local.set({ openAiKey: apiKey });
-    } else {
-      localStorage.setItem("openAiKey", apiKey);
-    }
 
     window.open(
       "https://www.linkedin.com/jobs/collections/recommended/",
@@ -136,40 +111,6 @@ function App() {
     <div className="bg-gray-900 text-white relative min-h-dvh flex justify-center">
       <div className="w-96 p-4">
         <form onSubmit={saveSettings}>
-          <div>
-            <label htmlFor="apiKey" className="font-bold">
-              OpenAI API Secret Key:
-            </label>
-            <input
-              type="password"
-              name="apiKey"
-              id="apiKey"
-              placeholder="OpenAI API Key"
-              className="bg-gray-700 outline-none p-2 mt-2 w-full rounded "
-              required
-              autoComplete="openai-key"
-              defaultValue={openAiKey}
-              onChange={() => setError(null)}
-            />
-            <div className="text-sm mt-2 ">
-              Visit{" "}
-              <a
-                href="https://platform.openai.com/api-keys"
-                target="_blank"
-                className="underline hover:text-gray-500 font-bold"
-              >
-                https://platform.openai.com/api-keys
-              </a>{" "}
-              to create your secret key.
-              <div className="mt-1">
-                We are using <span className="font-bold">gpt-4o mini</span>{" "}
-                model for this extension which costs $0.00008 per token.
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 h-[1px] bg-gray-400 " />
-
           <div className="mt-3">
             {resumeData ? (
               <div>
@@ -204,10 +145,10 @@ function App() {
             )}
           </div>
 
-          <div className="mt-4 h-[1px] bg-gray-400 " />
+          <div className="mt-2 h-[1px] bg-gray-400 " />
 
-          <button className="bg-gray-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
-            Save Settings
+          <button className="bg-green-700 hover:bg-gray-800 text-white font-bold p-2 rounded flex items-center gap-2 mt-4">
+            Continue
           </button>
         </form>
 
@@ -217,18 +158,6 @@ function App() {
             role="alert"
           >
             <span className="">{error}</span>
-          </div>
-        )}
-
-        {openAiKey ? (
-          <div className="border-t-2 border-white pt-4 mt-8 font-bold text-lg text-green-700">
-            You are ready to use the extension now. Visit a job page in Linkedin
-            now and click "<strong>Score My CV For This Job</strong>" button on
-            the top of the page to get the score.
-          </div>
-        ) : (
-          <div className="border-t-2 border-white pt-4 mt-8 font-bold text-lg text-green-700">
-            Add your OpenAI API key and upload your CV to get started.
           </div>
         )}
       </div>
