@@ -68,7 +68,7 @@ const injectBtn = () => {
             if (!result) {
               return injectErrorMsg();
             }
-            injectResult(result.result);
+            injectResult(result.data);
           });
       });
 
