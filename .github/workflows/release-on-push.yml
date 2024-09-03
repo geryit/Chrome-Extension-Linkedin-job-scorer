@@ -25,7 +25,7 @@ jobs:
 
       - name: Create ZIP file
         run: |
-          cd dist && zip -r ../linkedin-cv-scorer.zip *
+          cd dist && zip -r ../cv-scorer.zip *
 
       - name: Bump version and push tag
         id: bump
@@ -37,5 +37,5 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          files: linkedin-cv-scorer.zip
+          files: cv-scorer.zip
           tag_name: ${{ steps.bump.outputs.new_tag }}

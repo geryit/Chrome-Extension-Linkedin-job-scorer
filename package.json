@@ -1,6 +1,6 @@
 {
-  "name": "linkedin-job-rating-with-openai-chatgpt",
-  "description": "A Chrome extension that rates job postings on LinkedIn based on the job description with OpenAI ChatGPT",
+  "name": "job-rating-with-openai-chatgpt",
+  "description": "A Chrome extension that rates job postings by job description with OpenAI ChatGPT",
   "private": false,
   "version": "1.0.0",
   "type": "module",
@@ -9,10 +9,10 @@
     "build": "tsc && INLINE_RUNTIME_CHUNK=false vite build && tsc src/*.ts --outDir dist",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "zip": "npm run build && cd dist && zip -r ~/Downloads/linkedin-cv-scorer.zip *"
+    "zip": "npm run build && cd dist && zip -r ~/Downloads/cv-scorer.zip *"
   },
   "dependencies": {
-    "pdfjs-dist": "^4.5.136",
+    "pdfjs-dist": "^4.6.82",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

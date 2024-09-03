@@ -1,13 +1,13 @@
-## Privacy Policy for LinkedIn Job Scorer Chrome Extension
+## Privacy Policy for Job Scorer Chrome Extension
 
 ### Introduction
 
-Thank you for using the LinkedIn Job Scorer Chrome Extension. Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our extension.
+Thank you for using the Job Scorer Chrome Extension. Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our extension.
 
 ### Information We Collect
 
 - **CV Data**: When you upload your CV for comparison, we temporarily process the content of your CV to generate a score.
-- **Job Description Data**: We process job descriptions from LinkedIn pages to compare with your CV and generate a match score.
+- **Job Description Data**: We process job descriptions from pages to compare with your CV and generate a match score.
 
 ### How We Use Your Information
 
